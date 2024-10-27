@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag & Undo/Redo Text Change with Font Options</title>
+  <style>
+    .content {
+      width: 700px;
+      background-color: grey;
+      height: 450px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      border: 2px solid black;
+    }
+
+    #contentArea {
+      position: absolute;
+      top: 50px;
+      left: 50px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      cursor: move; 
+      transition: all 0.2s ease;
+    }
+
+    .buttons {
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 10px;
+      margin-right: 10px;
+    }
+
+    .font-options {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <span id="contentArea"></span>
+  </div>
+  <div class="editor">
+    <input type="text" id="textField" onkeyup="changeText()" placeholder="Type to change text" />
+    <div class="font-options">
+      <label for="fontSize">Font Size:</label>
+      <select id="fontSize" onchange="changeFontSize()">
+        <option value="16px">16px</option>
+        <option value="20px">20px</option>
+        <option value="24px">24px</option>
+        <option value="30px">30px</option>
+        <option value="36px">36px</option>
+      </select>
+      
+      <label for="fontFamily">Font Family:</label>
+      <select id="fontFamily" onchange="changeFontFamily()">
+        <option value="Arial">Arial</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Verdana">Verdana</option>
+      </select>
+    </div>
+  </div>
+  <div class="buttons">
+    <button onclick="undoText()">Undo Text</button>
+    <button onclick="redoText()">Redo Text</button>
+  </div>
+
+  <script>
+    const textHistory = [];
+    const redoTextStack = [];
+
+    const span = document.getElementById("contentArea");
+    const textBox = document.getElementById("textField");
+
+    function changeText() {
+      const currentText = textBox.value;
+      if (textHistory.length === 0 || textHistory[textHistory.length - 1] !== currentText) {
+        textHistory.push(currentText);
+        redoTextStack.length = 0;
+      }
+
+      span.textContent = currentText;
+    }
+
+    function undoText() {
+      if (textHistory.length > 1) {
+        redoTextStack.push(textHistory.pop());
+        span.textContent = textHistory[textHistory.length - 1];
+        textBox.value = textHistory[textHistory.length - 1];
+      }
+    }
+    function redoText() {
+      if (redoTextStack.length > 0) {
+        const nextText = redoTextStack.pop();
+        textHistory.push(nextText);
+        span.textContent = nextText;
+        textBox.value = nextText;
+      }
+    }
+
+    function changeFontSize() {
+      const selectedSize = document.getElementById("fontSize").value;
+      span.style.fontSize = selectedSize;
+    }
+
+    function changeFontFamily() {
+      const selectedFamily = document.getElementById("fontFamily").value;
+      span.style.fontFamily = selectedFamily; 
+    }
+
+    let isDragging = false;
+    let offsetX = 0, offsetY = 0;
+
+    span.addEventListener('mousedown', function(e) {
+      isDragging = true;
+      offsetX = e.clientX - span.getBoundingClientRect().left;
+      offsetY = e.clientY - span.getBoundingClientRect().top;
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        const container = document.querySelector('.content');
+        const containerRect = container.getBoundingClientRect();
+
+        let newLeft = e.clientX - containerRect.left - offsetX;
+        let newTop = e.clientY - containerRect.top - offsetY;
+
+        if (newLeft < 0) newLeft = 0;
+        if (newTop < 0) newTop = 0;
+        if (newLeft + span.offsetWidth > containerRect.width) {
+          newLeft = containerRect.width - span.offsetWidth;
+        }
+        if (newTop + span.offsetHeight > containerRect.height) {
+          newTop = containerRect.height - span.offsetHeight;
+        }
+
+        span.style.left = newLeft + 'px';
+        span.style.top = newTop + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (isDragging) {
+        isDragging = false;
+      }
+    });
+    changeText()
+  </script>
+</body>
+</html>
